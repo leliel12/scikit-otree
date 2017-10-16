@@ -1,2 +1,3 @@
-# scikit-otree
-o-Tree integration to the scientific Python Stack
+# SciKit oTree
+
+[oTree](http://www.otree.org/) integration to the scientific Python Stack
