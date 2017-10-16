@@ -1,0 +1,16 @@
+language: python
+sudo: false
+install:
+  - pip install tox
+script:
+  - tox -r
+matrix:
+    include:
+        - python: 3.4
+          env: TOXENV=py34
+        - python: 3.5
+          env: TOXENV=py35
+        - python: 3.5
+          env: TOXENV=style
+        - python: 3.5
+          env: TOXENV=coverage
