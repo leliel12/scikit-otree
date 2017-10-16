@@ -25,7 +25,7 @@
 
 
 # =============================================================================
-# DOCS
+# DOCS & META
 # =============================================================================
 
 """oTree integration to the scientific Python Stack
@@ -39,6 +39,28 @@ Based on:
 
 """
 
+import os
+
+__version__ = ("0", "2", "1")
+
+__all__ = ["oTree"]
+
+NAME = "scikit-otree"
+
+DOC = __doc__
+
+VERSION = ".".join(__version__)
+
+AUTHORS = "Juan BC"
+
+EMAIL = "jbc.develop@gmail.com"
+
+URL = "https://github.com/leliel12/scikit-otree"
+
+LICENSE = "MIT License"
+
+KEYWORDS = "mcda mcdm ahp moora muti criteria".split()
+
 
 # =============================================================================
 # IMPORTS
@@ -46,20 +68,12 @@ Based on:
 
 import contextlib
 import io
-import os
 import pickle
 import multiprocessing as mp
 from unittest import mock
 
-import pandas as pd
-
-# =============================================================================
-# CONF
-# =============================================================================
-
-__version__ = "0.0.1"
-
-__all__ = ["oTree"]
+if os.getenv("SKOTREE_IN_SETUP") != "True":
+    import pandas as pd
 
 
 # =============================================================================
