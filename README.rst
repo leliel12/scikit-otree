@@ -48,6 +48,8 @@ Support
 Test
 ----
 
-.. code-block:: bash
+Clone or download this project and inside the project folder run:
 
-    $ python -m skotree
+.. code-block:: bash
+    $ pip install tox
+    $ tox
