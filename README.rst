@@ -38,7 +38,7 @@ Typical setup
 Support
 -------
 
--   **Full Documentation and Tutorial:**
+-   **Full Documentation and Tutorial:** `tutorial.ipynb <tutorial.ipynb>`_
 -   **Contact:** jbc.develop@gmail.com
 -   **Issues:** If you have issues please report them as a issue
     here: https://github.com/leliel12/scikit-otree/issues
