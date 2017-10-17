@@ -2,6 +2,19 @@
 Scikit oTree
 ============
 
+.. image:: https://travis-ci.org/leliel12/scikit-otree.svg?branch=master
+    :target: https://travis-ci.org/leliel12/scikit-otree
+    :alt: Build-Status
+    
+.. image:: https://img.shields.io/badge/License-MIT-blue.svg
+   :target: https://opensource.org/licenses/MIT
+   :alt: License
+
+.. image:: https://img.shields.io/badge/python-3.5-blue.svg
+   :target: https://badge.fury.io/py/scikit-otree
+   :alt: Python 3.5
+
+
 `oTree <http://www.otree.org/>`_ integration to the scientific Python Stack
 
 Based on:
