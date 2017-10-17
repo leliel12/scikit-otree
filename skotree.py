@@ -121,6 +121,17 @@ class oTreeContextProcess(mp.Process):
 
 
 class oTree(object):
+    """Connection to an oTree deployment.
+
+    This class are in charge to retrieve the data from some oTree database
+    without change the local environment
+
+    Parameters
+    ----------
+    path : string
+        The path where the settings.py of the deployment are located
+
+    """
 
     def __init__(self, path):
         self._path = os.path.abspath(path)
@@ -146,6 +157,15 @@ class oTree(object):
         return settings
 
     def lsapps(self):
+        """List all available oTree apps instaleed in the deployment.
+
+        Returns
+        -------
+
+        list:
+            list with the installed oTree apps
+
+        """
         return self._settings.INSTALLED_OTREE_APPS
 
     def all_data(self):
@@ -154,6 +174,12 @@ class oTree(object):
         There is one row per participant; different apps and rounds are stacked
         horizontally. This format is useful if you want to correlate
         participant's behavior in one app with their behavior in another app.
+
+        Returns
+        -------
+
+        data: :py:class:`pandas.DataFrame`
+            DataFrame with one row per participant.
 
         """
         def _all_data():
