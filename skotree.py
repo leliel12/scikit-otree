@@ -196,7 +196,15 @@ class oTree(object):
             return pd.DataFrame()
 
     def time_expent(self):
-        """Time spent on each page"""
+        """Time spent on each page
+
+        Returns
+        -------
+
+        data: :py:class:`pandas.DataFrame`
+            DataFrame with one row per participant per session.
+
+        """
         def _time_expent():
             from otree import export
             fp = io.StringIO()
@@ -219,6 +227,20 @@ class oTree(object):
         one app, or if you want to correlate data between
         rounds of the same app.
 
+        Parameters
+        ----------
+
+        app_name : string
+            name of the oTree app to retrieve the documentation.
+            (Check ``oTree.lsapps())`` for the avaulable names)
+
+        Returns
+        -------
+
+        data: :py:class:`pandas.DataFrame`
+            DataFrame with one row for each player in the given app.
+
+
         """
         if app_name not in self._settings.INSTALLED_OTREE_APPS:
             raise ValueError("Invalid app {}".format(app_name))
@@ -237,7 +259,22 @@ class oTree(object):
             return pd.DataFrame()
 
     def app_doc(self, app_name):
-        """Per-app documentation data."""
+        """Per-app documentation data.
+
+        Parameters
+        ----------
+
+        app_name : string
+            name of the oTree app to retrieve the documentation.
+            (Check ``oTree.lsapps())`` for the avaulable names)
+
+        Returns
+        -------
+
+        docs: :py:class:`str`
+            String with the description of the data of the given app.
+
+        """
         if app_name not in self._settings.INSTALLED_OTREE_APPS:
             raise ValueError("Invalid app {}".format(app_name))
 

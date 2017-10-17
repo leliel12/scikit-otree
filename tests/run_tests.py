@@ -47,7 +47,6 @@ class SKoTreeTestCase(object):
 
     def test_time_expent(self):
         texpent = self.otree.time_expent()
-        import ipdb; ipdb.set_trace()
         assert texpent.empty == True
         assert len(texpent.columns) == 10
 
