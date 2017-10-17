@@ -102,8 +102,7 @@ class oTreeContextProcess(mp.Process):
         return "oTree@{}$ {}".format(self._path, self._func)
 
     def run(self):
-        result = io.BytesIO()
-        with cd(self._path):
+        with cd(self._path), mock.patch("sys.argv", ["", "check"]):
             with mock.patch("sys.stdout"), mock.patch("warnings.warn"):
                 from otree.management import cli
                 cli.otree_cli()
@@ -159,12 +158,16 @@ class oTree(object):
         """
         def _all_data():
             from otree import export
-            rows = export.get_rows_for_wide_csv()
-            return pd.DataFrame(rows)
+            fp = io.StringIO()
+            export.export_wide(fp, file_extension='csv')
+            fp.seek(0)
+            return fp
 
-        with mock.patch("django.conf.settings", self._settings):
-            df = self._execute(_all_data)
-        return df
+        fp = self._execute(_all_data)
+        try:
+            return pd.read_csv(fp)
+        except pd.errors.EmptyDataError:
+            return pd.DataFrame()
 
     def time_expent(self):
         """Time spent on each page"""
@@ -173,13 +176,15 @@ class oTree(object):
             fp = io.StringIO()
             export.export_time_spent(fp)
             fp.seek(0)
+            return fp
+
+        fp = self._execute(_time_expent)
+        try:
             return pd.read_csv(fp)
+        except pd.errors.EmptyDataError:
+            return pd.DataFrame()
 
-        with mock.patch("django.conf.settings", self._settings):
-            df = self._execute(_time_expent)
-        return df
-
-    def app(self, app_name):
+    def app_data(self, app_name):
         """Per-app data.
 
         These DataFrame contains a row for each player in the given app. If
@@ -194,14 +199,18 @@ class oTree(object):
 
         def _app():
             from otree import export
-            rows = export.get_rows_for_csv(app_name)
-            return pd.DataFrame(rows)
+            fp = io.StringIO()
+            export.export_app(app_name, fp, file_extension='csv')
+            fp.seek(0)
+            return fp
 
-        with mock.patch("django.conf.settings", self._settings):
-            df = self._execute(_app)
-        return df
+        fp = self._execute(_app)
+        try:
+            return pd.read_csv(fp)
+        except pd.errors.EmptyDataError:
+            return pd.DataFrame()
 
-    def doc(self, app_name):
+    def app_doc(self, app_name):
         """Per-app documentation data."""
         if app_name not in self._settings.INSTALLED_OTREE_APPS:
             raise ValueError("Invalid app {}".format(app_name))
@@ -210,11 +219,11 @@ class oTree(object):
             from otree import export
             fp = io.StringIO()
             export.export_docs(fp, app_name)
-            return fp.getvalue()
+            fp.seek(0)
+            return fp
 
-        with mock.patch("django.conf.settings", self._settings):
-            docs = self._execute(_doc)
-        return docs
+        fp = self._execute(_doc)
+        return fp.getvalue()
 
     @property
     def path(self):
