@@ -4,6 +4,11 @@
 import sys
 import argparse
 import inspect
+import io
+
+import numpy as np
+
+import pandas as pd
 
 import skotree
 
@@ -38,6 +43,19 @@ class SKoTreeTestCase(object):
     def test_lsapps(self):
         apps = self.otree.lsapps()
         assert apps == ["matching_pennies"]
+
+    def test_lssessions(self):
+        apps = self.otree.lssessions()
+        assert apps == ["matching_pennies"]
+
+    def test_session_config(self):
+        self.otree.session_config("matching_pennies")
+        try:
+            self.otree.session_config("foo")
+        except:
+            pass
+        else:
+            raise AssertionError()
 
     def test_all_data(self):
         all_data = self.otree.all_data()
@@ -85,6 +103,32 @@ class SKoTreeTestCase(object):
             pass
         else:
             raise AssertionError()
+
+    def test_bot_data(self):
+        store = self.otree.bot_data("matching_pennies", 2)
+        assert isinstance(store.matching_pennies, pd.DataFrame)
+        assert isinstance(store["matching_pennies"], pd.DataFrame)
+        assert "matching_pennies" in store
+
+        df = store.matching_pennies
+        assert np.unique(df["participant.code"]).size == 2
+
+        df = self.otree.bot_data("matching_pennies", 4).matching_pennies
+        assert np.unique(df["participant.code"]).size == 4
+
+    def test_bot_data_fail(self):
+        try:
+            self.otree.bot_data("matching_pennies", 3)
+        except RuntimeError:
+            pass
+        else:
+            raise AssertionError()
+
+    def test_csv_store(self):
+        store = skotree.CSVStore({"foo": io.StringIO()})
+        assert "foo" in store
+        assert "<CSVStore({foo})>" == repr(store)
+        assert store.foo.empty
 
 
 if __name__ == "__main__":
