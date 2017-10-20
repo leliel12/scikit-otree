@@ -76,6 +76,16 @@ class SKoTreeTestCase(object):
         doc = self.otree.app_doc("matching_pennies")
         assert isinstance(doc, str)
 
+    def test_raise_exception(self):
+        def raise_err():
+            raise Exception()
+        try:
+            self.otree._execute(raise_err)
+        except:
+            pass
+        else:
+            raise AssertionError()
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

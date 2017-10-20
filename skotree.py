@@ -41,7 +41,7 @@ Based on:
 
 import os
 
-__version__ = ("0", "2", "1")
+__version__ = ("0", "3")
 
 __all__ = ["oTree"]
 
@@ -102,11 +102,14 @@ class oTreeContextProcess(mp.Process):
         return "oTree@{}$ {}".format(self._path, self._func)
 
     def run(self):
-        with cd(self._path), mock.patch("sys.argv", ["", "check"]):
-            with mock.patch("sys.stdout"), mock.patch("warnings.warn"):
-                from otree.management import cli
-                cli.otree_cli()
-            result = self._func()
+        try:
+            with cd(self._path), mock.patch("sys.argv", ["", "check"]):
+                with mock.patch("sys.stdout"), mock.patch("warnings.warn"):
+                    from otree.management import cli
+                    cli.otree_cli()
+                result = self._func()
+        except Exception as err:
+            result = err
         serialized = pickle.dumps(result)
         self._queue.put(serialized)
 
@@ -145,13 +148,15 @@ class oTree(object):
         cmd = oTreeContextProcess(self._path, func)
         cmd.start()
         cmd.join()
-        return cmd.get_result()
+        result = cmd.get_result()
+        if isinstance(result, BaseException):
+            raise result
+        return result
 
     def _from_path_settings(self):
         def get_settings():
             from django.conf import settings
             return settings
-
         settings = self._execute(get_settings)
         settings.configured = True
         return settings
