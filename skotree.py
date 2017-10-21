@@ -77,6 +77,14 @@ from unittest import mock
 if os.getenv("SKOTREE_IN_SETUP") != "True":
     import pandas as pd
 
+# =============================================================================
+# CONSTANS AND LOGGERS
+# =============================================================================
+
+logger = logging.getLogger("skotree")
+logger.addHandler(logging.StreamHandler())
+logger.setLevel(logging.INFO)
+
 
 # =============================================================================
 # CONTEXT
@@ -182,10 +190,14 @@ class oTree(object):
 
     def _execute(self, func):
         cmd = oTreeContextProcess(self._path, func)
+        logger.debug("Starting remote oTree process...")
         cmd.start()
+        logger.debug("Wating for the result...")
         cmd.join()
+        logger.debug("Retrieving result")
         result = cmd.get_result()
         if isinstance(result, BaseException):
+            logger.debug("Remote procees raises an exception!")
             raise result
         return result
 
@@ -412,6 +424,8 @@ class oTree(object):
                 fp = fps[aname]
                 yield fp
                 fp.seek(0)
+
+            logger.info("Running bots, pleae wait...")
 
             stdout = io.StringIO()
             with mock.patch("os.makedirs"), mock.patch("sys.stdout", stdout), \
