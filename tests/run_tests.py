@@ -63,10 +63,10 @@ class SKoTreeTestCase(object):
         assert all_data.empty == must_be_empty
         assert all_data.columns.size == (49 if self.has_session else 0)
 
-    def test_time_expent(self):
-        texpent = self.otree.time_expent()
-        assert texpent.empty == True
-        assert len(texpent.columns) == 10
+    def test_time_spent(self):
+        tspent = self.otree.time_spent()
+        assert tspent.empty == True
+        assert len(tspent.columns) == 10
 
     def test_app_data_fail(self):
         try:
