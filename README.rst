@@ -6,6 +6,9 @@ Scikit oTree
     :target: https://travis-ci.org/leliel12/scikit-otree
     :alt: Build-Status
     
+.. image:: https://badge.fury.io/py/scikit-otree.svg
+    :target: https://badge.fury.io/py/scikit-otree
+    
 .. image:: https://img.shields.io/badge/License-MIT-blue.svg
    :target: https://opensource.org/licenses/MIT
    :alt: License
