@@ -41,7 +41,7 @@ Based on:
 
 import os
 
-__version__ = ("0", "3")
+__version__ = ("0", "3", "1")
 
 __all__ = ["oTree"]
 
@@ -277,7 +277,7 @@ class oTree(object):
         except pd.errors.EmptyDataError:
             return pd.DataFrame()
 
-    def time_expent(self):
+    def time_spent(self):
         """Time spent on each page
 
         Returns
@@ -287,14 +287,14 @@ class oTree(object):
             DataFrame with one row per participant per session.
 
         """
-        def _time_expent():
+        def _time_spent():
             from otree import export
             fp = io.StringIO()
             export.export_time_spent(fp)
             fp.seek(0)
             return fp
 
-        fp = self._execute(_time_expent)
+        fp = self._execute(_time_spent)
         try:
             return pd.read_csv(fp)
         except pd.errors.EmptyDataError:
