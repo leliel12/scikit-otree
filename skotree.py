@@ -66,19 +66,23 @@ KEYWORDS = "mcda mcdm ahp moora muti criteria".split()
 # IMPORTS
 # =============================================================================
 
+import abc
 import contextlib
-import logging
 import io
+import logging
 import pickle
+import os
 import multiprocessing as mp
 from collections import Mapping
 from unittest import mock
+import urllib.parse as urlparse
 
 if os.getenv("SKOTREE_IN_SETUP") != "True":
     import pandas as pd
 
+
 # =============================================================================
-# CONSTANS AND LOGGERS
+# LOGGERS
 # =============================================================================
 
 logger = logging.getLogger("skotree")
@@ -87,7 +91,7 @@ logger.setLevel(logging.INFO)
 
 
 # =============================================================================
-# CONTEXT
+# CONTEXT & FUNCTIONS
 # =============================================================================
 
 @contextlib.contextmanager
@@ -99,6 +103,18 @@ def cd(path):
     finally:
         os.chdir(old_path)
 
+
+def is_url(string):
+    """Check if a string is an url"""
+    parsed = urlparse.urlparse(string)
+    return bool(parsed.scheme and parsed.netloc)
+
+
+
+
+# =============================================================================
+# COMMON CLASSES
+# =============================================================================
 
 class CSVStore(Mapping):
 
@@ -134,6 +150,57 @@ class CSVStore(Mapping):
             fp.seek(0)
 
 
+# =============================================================================
+# ABSTRACT MIDDLEWARE
+# =============================================================================
+
+class Middleware(metaclass=abc.ABCMeta):
+
+    @abc.abstractmethod
+    def lsapps(self):
+        pass
+
+    @abc.abstractmethod
+    def lssessions(self):
+        pass
+
+    @abc.abstractmethod
+    def session_config(self, session_name):
+        pass
+
+    @abc.abstractmethod
+    def all_data(self):
+        pass
+
+    @abc.abstractmethod
+    def time_spent(self):
+        pass
+
+    @abc.abstractmethod
+    def app_data(self, app_name):
+        pass
+
+    @abc.abstractmethod
+    def app_doc(self, app_name):
+        pass
+
+    @abc.abstractmethod
+    def bot_data(self, session_name, num_participants=None):
+        pass
+
+    @abc.abstractproperty
+    def path(self):
+        pass
+
+    @abc.abstractproperty
+    def settings(self):
+        pass
+
+
+# =============================================================================
+# LOCAL OTREE
+# =============================================================================
+
 class oTreeContextProcess(mp.Process):
 
     def __init__(self, path, func, *args, **kwargs):
@@ -167,29 +234,20 @@ class oTreeContextProcess(mp.Process):
         return self._path
 
 
-class oTree(object):
-    """Connection to an oTree deployment.
-
-    This class are in charge to retrieve the data from some oTree database
-    without change the local environment
-
-    Parameters
-    ----------
-    path : string
-        The path where the settings.py of the deployment are located
-
-    """
+class LocalMiddleware(Middleware):
 
     def __init__(self, path):
         self._path = os.path.abspath(path)
-        self._settings = self._from_path_settings()
 
-    def __repr__(self):
-        """x.__repr__() <==> repr(x)"""
-        return "<oTree@{}>".format(self._path)
+        # retrieve settings
+        def get_settings():
+            from django.conf import settings
+            return settings
+        self._settings = self.execute(get_settings)
+        self._settings.configured = True
 
-    def _execute(self, func):
-        cmd = oTreeContextProcess(self._path, func)
+    def execute(self, func):
+        cmd = oTreeContextProcess(self.path, func)
         logger.debug("Starting remote oTree process...")
         cmd.start()
         logger.debug("Wating for the result...")
@@ -201,69 +259,21 @@ class oTree(object):
             raise result
         return result
 
-    def _from_path_settings(self):
-        def get_settings():
-            from django.conf import settings
-            return settings
-        settings = self._execute(get_settings)
-        settings.configured = True
-        return settings
-
     def lsapps(self):
-        """List all available oTree apps instaleed in the deployment.
-
-        Returns
-        -------
-
-        list:
-            list with the installed oTree apps
-
-        """
-        return self._settings.INSTALLED_OTREE_APPS
+        return self.settings.INSTALLED_OTREE_APPS
 
     def lssessions(self):
-        """List all available oTree session configured in the deployment.
-
-        Returns
-        -------
-
-        list:
-            list with the installed oTree sessions
-
-        """
-        return [s["name"] for s in self._settings.SESSION_CONFIGS]
+       return [s["name"] for s in self.settings.SESSION_CONFIGS]
 
     def session_config(self, session_name):
-        """Retrieve the configuration of the given session.
-
-        Returns
-        -------
-
-        dict:
-            dict with the default and specific configuration for a session
-
-        """
-        config = dict(self._settings.SESSION_CONFIG_DEFAULTS)
-        for s in self._settings.SESSION_CONFIGS:
+        config = dict(self.settings.SESSION_CONFIG_DEFAULTS)
+        for s in self.settings.SESSION_CONFIGS:
             if s["name"] == session_name:
                 config.update(s)
                 return config
         raise ValueError("Invalid session_name {}".format(session_name))
 
     def all_data(self):
-        """Data for all apps in one DataFrame.
-
-        There is one row per participant; different apps and rounds are stacked
-        horizontally. This format is useful if you want to correlate
-        participant's behavior in one app with their behavior in another app.
-
-        Returns
-        -------
-
-        data: :py:class:`pandas.DataFrame`
-            DataFrame with one row per participant.
-
-        """
         def _all_data():
             from otree import export
             fp = io.StringIO()
@@ -271,22 +281,13 @@ class oTree(object):
             fp.seek(0)
             return fp
 
-        fp = self._execute(_all_data)
+        fp = self.execute(_all_data)
         try:
             return pd.read_csv(fp)
         except pd.errors.EmptyDataError:
             return pd.DataFrame()
 
     def time_spent(self):
-        """Time spent on each page
-
-        Returns
-        -------
-
-        data: :py:class:`pandas.DataFrame`
-            DataFrame with one row per participant per session.
-
-        """
         def _time_spent():
             from otree import export
             fp = io.StringIO()
@@ -294,37 +295,14 @@ class oTree(object):
             fp.seek(0)
             return fp
 
-        fp = self._execute(_time_spent)
+        fp = self.execute(_time_spent)
         try:
             return pd.read_csv(fp)
         except pd.errors.EmptyDataError:
             return pd.DataFrame()
 
     def app_data(self, app_name):
-        """Per-app data.
-
-        These DataFrame contains a row for each player in the given app. If
-        there are multiple rounds, there will be multiple rows for the same
-        participant. This format is useful if you are mainly interested in
-        one app, or if you want to correlate data between
-        rounds of the same app.
-
-        Parameters
-        ----------
-
-        app_name : string
-            name of the oTree app to retrieve the documentation.
-            (Check ``oTree.lsapps())`` for the available names)
-
-        Returns
-        -------
-
-        data: :py:class:`pandas.DataFrame`
-            DataFrame with one row for each player in the given app.
-
-
-        """
-        if app_name not in self._settings.INSTALLED_OTREE_APPS:
+        if app_name not in self.settings.INSTALLED_OTREE_APPS:
             raise ValueError("Invalid app {}".format(app_name))
 
         def _app():
@@ -334,30 +312,14 @@ class oTree(object):
             fp.seek(0)
             return fp
 
-        fp = self._execute(_app)
+        fp = self.execute(_app)
         try:
             return pd.read_csv(fp)
         except pd.errors.EmptyDataError:
             return pd.DataFrame()
 
     def app_doc(self, app_name):
-        """Per-app documentation data.
-
-        Parameters
-        ----------
-
-        app_name : string
-            name of the oTree app to retrieve the documentation.
-            (Check ``oTree.lsapps())`` for the available names)
-
-        Returns
-        -------
-
-        docs: :py:class:`str`
-            String with the description of the data of the given app.
-
-        """
-        if app_name not in self._settings.INSTALLED_OTREE_APPS:
+        if app_name not in self.settings.INSTALLED_OTREE_APPS:
             raise ValueError("Invalid app {}".format(app_name))
 
         def _doc():
@@ -367,31 +329,10 @@ class oTree(object):
             fp.seek(0)
             return fp
 
-        fp = self._execute(_doc)
+        fp = self.execute(_doc)
         return fp.getvalue()
 
     def bot_data(self, session_name, num_participants=None):
-        """Discover and run the experiment tests and retrieve the data
-        generated by them.
-
-        Parameters
-        ----------
-
-        session_name : string
-            name of the session configured in oTree.
-            (Check ``oTree.lssession())`` for the available names)
-        num_participants : int or None
-            Number of participants, defaults to minimum for the session config
-            (check ``oTree.session_config(session_name)``).
-
-        Returns
-        -------
-
-        CSVStore :
-            Mapped type wiht one key per app inside app_sequence of the
-            session.
-
-        """
         config = self.session_config(session_name)
         num_participants = (
             config["num_demo_participants"]
@@ -425,7 +366,7 @@ class oTree(object):
                 yield fp
                 fp.seek(0)
 
-            logger.info("Running bots, pleae wait...")
+            logger.info("Running bots, please wait...")
 
             stdout = io.StringIO()
             with mock.patch("os.makedirs"), mock.patch("sys.stdout", stdout), \
@@ -443,16 +384,204 @@ class oTree(object):
 
             return fps
 
-        fps = self._execute(_bot_data)
+        fps = self.execute(_bot_data)
         store = CSVStore(fps)
         return store
 
     @property
     def path(self):
-        """Path of the oTree instance"""
         return self._path
 
     @property
     def settings(self):
-        """setting of the oTree instance"""
         return self._settings
+
+# =============================================================================
+# API
+# =============================================================================
+
+MIDDLEWARES = {
+    "local": LocalMiddleware,
+    "remote": LocalMiddleware}
+
+class oTree(object):
+    """Connection to an oTree deployment.
+
+    This class are in charge to retrieve the data from some oTree database
+    without change the local environment
+
+    Parameters
+    ----------
+    path : string
+        The path where the settings.py of the deployment are located
+        or the URL where oTree are running.
+
+    middleware : string
+
+        can be: "local" (oTree are in the same directory structure and all
+        data transfer are made in pure Python), "remote" (communication
+        throught HTTP) or "auto" (local if the path are an existing directory
+        otherwise try with "remote").
+
+    kwargs :
+        Extra argument for the middleware
+
+    """
+
+    def __init__(self, path, middleware="auto", **kwargs):
+        if middleware is "auto":
+            middleware = "remote" if is_url(path) else "local"
+        self._path = os.path.abspath(path) if middleware == "local" else path
+        self._middleware = MIDDLEWARES[middleware](self._path, **kwargs)
+
+    def __repr__(self):
+        """x.__repr__() <==> repr(x)"""
+        return "<oTree@{}>".format(self._path)
+
+    def lsapps(self):
+        """List all available oTree apps instaleed in the deployment.
+
+        Returns
+        -------
+
+        list:
+            list with the installed oTree apps
+
+        """
+        return self._middleware.lsapps()
+
+    def lssessions(self):
+        """List all available oTree session configured in the deployment.
+
+        Returns
+        -------
+
+        list:
+            list with the installed oTree sessions
+
+        """
+        return self._middleware.lssessions()
+
+    def session_config(self, session_name):
+        """Retrieve the configuration of the given session.
+
+        Returns
+        -------
+
+        dict:
+            dict with the default and specific configuration for a session
+
+        """
+        return self._middleware.session_config(session_name)
+
+    def all_data(self):
+        """Data for all apps in one DataFrame.
+
+        There is one row per participant; different apps and rounds are stacked
+        horizontally. This format is useful if you want to correlate
+        participant's behavior in one app with their behavior in another app.
+
+        Returns
+        -------
+
+        data: :py:class:`pandas.DataFrame`
+            DataFrame with one row per participant.
+
+        """
+        return self._middleware.all_data()
+
+
+    def time_spent(self):
+        """Time spent on each page
+
+        Returns
+        -------
+
+        data: :py:class:`pandas.DataFrame`
+            DataFrame with one row per participant per session.
+
+        """
+        return self._middleware.time_spent()
+
+
+    def app_data(self, app_name):
+        """Per-app data.
+
+        These DataFrame contains a row for each player in the given app. If
+        there are multiple rounds, there will be multiple rows for the same
+        participant. This format is useful if you are mainly interested in
+        one app, or if you want to correlate data between
+        rounds of the same app.
+
+        Parameters
+        ----------
+
+        app_name : string
+            name of the oTree app to retrieve the documentation.
+            (Check ``oTree.lsapps())`` for the available names)
+
+        Returns
+        -------
+
+        data: :py:class:`pandas.DataFrame`
+            DataFrame with one row for each player in the given app.
+
+        """
+        return self._middleware.app_data(app_name)
+
+    def app_doc(self, app_name):
+        """Per-app documentation data.
+
+        Parameters
+        ----------
+
+        app_name : string
+            name of the oTree app to retrieve the documentation.
+            (Check ``oTree.lsapps())`` for the available names)
+
+        Returns
+        -------
+
+        docs: :py:class:`str`
+            String with the description of the data of the given app.
+
+        """
+        return self._middleware.app_doc(app_name)
+
+    def bot_data(self, session_name, num_participants=None):
+        """Discover and run the experiment tests and retrieve the data
+        generated by them.
+
+        Parameters
+        ----------
+
+        session_name : string
+            name of the session configured in oTree.
+            (Check ``oTree.lssession())`` for the available names)
+        num_participants : int or None
+            Number of participants, defaults to minimum for the session config
+            (check ``oTree.session_config(session_name)``).
+
+        Returns
+        -------
+
+        CSVStore :
+            Mapped type wiht one key per app inside app_sequence of the
+            session.
+
+        """
+        return self._middleware.bot_data(session_name, num_participants)
+
+    @property
+    def path(self):
+        """Path of the oTree instance"""
+        return self._middleware.path
+
+    @property
+    def settings(self):
+        """setting of the oTree instance"""
+        return self._middleware.settings
+
+    @property
+    def middleware(self):
+        return self._middleware

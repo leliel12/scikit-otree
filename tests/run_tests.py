@@ -19,6 +19,7 @@ class SKoTreeTestCase(object):
         self.path = path
         self.has_session = has_session
         self.methods = []
+        self.is_remote = skotree.is_url(path)
         for mname in dir(self):
             method = getattr(self, mname)
             if mname.startswith("test_") and inspect.ismethod(method):
@@ -94,16 +95,6 @@ class SKoTreeTestCase(object):
         doc = self.otree.app_doc("matching_pennies")
         assert isinstance(doc, str)
 
-    def test_raise_exception(self):
-        def raise_err():
-            raise Exception()
-        try:
-            self.otree._execute(raise_err)
-        except:
-            pass
-        else:
-            raise AssertionError()
-
     def test_bot_data(self):
         store = self.otree.bot_data("matching_pennies", 2)
         assert isinstance(store.matching_pennies, pd.DataFrame)
@@ -133,13 +124,13 @@ class SKoTreeTestCase(object):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dir", dest="wrk_path", required=True)
+    parser.add_argument("--path", dest="path", required=True)
 
-    group = parser.add_mutually_exclusive_group(required=True)
-    group.add_argument("--session", dest="session", action="store_true")
-    group.add_argument("--no-session", dest="session", action="store_false")
+    sgroup = parser.add_mutually_exclusive_group(required=True)
+    sgroup.add_argument("--session", dest="session", action="store_true")
+    sgroup.add_argument("--no-session", dest="session", action="store_false")
 
     args = parser.parse_args()
 
-    test_case = SKoTreeTestCase(args.wrk_path, args.session)
+    test_case = SKoTreeTestCase(args.path, args.session)
     test_case.run()
