@@ -215,9 +215,11 @@ class oTreeContextProcess(mp.Process):
     def run(self):
         try:
             with cd(self._path), mock.patch("sys.argv", ["", "check"]):
-                with mock.patch("sys.stdout"), mock.patch("warnings.warn"):
-                    from otree.management import cli
-                    cli.otree_cli()
+                with mock.patch("sys.stdout"), \
+                     mock.patch("warnings.warn"), \
+                     mock.patch("otree.management.cli.pypi_updates_cli"):
+                        from otree.management import cli
+                        cli.otree_cli()
                 result = self._func()
         except Exception as err:
             result = err
