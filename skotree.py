@@ -41,7 +41,7 @@ Based on:
 
 import os
 
-__version__ = ("0", "3", "1")
+__version__ = ("0", "3", "5")
 
 __all__ = ["oTree"]
 
@@ -109,8 +109,6 @@ def is_url(string):
     """Check if a string is an url"""
     parsed = urlparse.urlparse(string)
     return bool(parsed.scheme and parsed.netloc)
-
-
 
 
 # =============================================================================
@@ -266,7 +264,7 @@ class LocalMiddleware(Middleware):
         return self.settings.INSTALLED_OTREE_APPS
 
     def lssessions(self):
-       return [s["name"] for s in self.settings.SESSION_CONFIGS]
+        return [s["name"] for s in self.settings.SESSION_CONFIGS]
 
     def session_config(self, session_name):
         config = dict(self.settings.SESSION_CONFIG_DEFAULTS)
@@ -372,9 +370,11 @@ class LocalMiddleware(Middleware):
             # mock isdir
             isdir = os.path.isdir
             export_path = "_skotree_{}".format(uuid.uuid4())
+
             def isdir_wrap(path):
                 return False if path == export_path else isdir(path)
 
+            # the actual logic
             logger.info("Running bots, please wait...")
 
             stdout = io.StringIO()
@@ -406,13 +406,14 @@ class LocalMiddleware(Middleware):
     def settings(self):
         return self._settings
 
+
 # =============================================================================
 # API
 # =============================================================================
 
 MIDDLEWARES = {
-    "local": LocalMiddleware,
-    "remote": LocalMiddleware}
+    "local": LocalMiddleware}
+
 
 class oTree(object):
     """Connection to an oTree deployment.
@@ -500,7 +501,6 @@ class oTree(object):
         """
         return self._middleware.all_data()
 
-
     def time_spent(self):
         """Time spent on each page
 
@@ -512,7 +512,6 @@ class oTree(object):
 
         """
         return self._middleware.time_spent()
-
 
     def app_data(self, app_name):
         """Per-app data.
