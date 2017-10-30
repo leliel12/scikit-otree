@@ -79,6 +79,7 @@ from unittest import mock
 import urllib.parse as urlparse
 
 if os.getenv("SKOTREE_IN_SETUP") != "True":
+    from bs4 import BeautifulSoup
     import pandas as pd
 
 
@@ -408,11 +409,28 @@ class LocalMiddleware(Middleware):
 
 
 # =============================================================================
+# REMOTE OTREE
+# =============================================================================
+
+class RemoteMiddleware(Middleware):
+
+    def __init__(self, url, admin_password=None):
+        self._url = url
+        self._cookies = {}
+        if admin_password is not None:
+            # https://stackoverflow.com/questions/10134690/using-requests-python-library-to-connect-django-app-failed-on-authentication
+            raise NotImplementedError("loggin not implemented")
+
+
+
+
+# =============================================================================
 # API
 # =============================================================================
 
 MIDDLEWARES = {
-    "local": LocalMiddleware}
+    "local": LocalMiddleware
+    "remote": RemoteMiddleware}
 
 
 class oTree(object):
