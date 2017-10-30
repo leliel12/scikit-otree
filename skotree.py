@@ -72,6 +72,7 @@ import io
 import logging
 import pickle
 import os
+import uuid
 import multiprocessing as mp
 from collections import Mapping
 from unittest import mock
@@ -361,25 +362,32 @@ class LocalMiddleware(Middleware):
             fps = {aname: io.StringIO() for aname in config["app_sequence"]}
 
             @contextlib.contextmanager
-            def export_app_wrap(fpath, *args, **kwargs):
+            def export_app_codecs_open_stringio(fpath, *args, **kwargs):
                 basename = os.path.basename(fpath)
                 aname = os.path.splitext(basename)[0]
                 fp = fps[aname]
                 yield fp
                 fp.seek(0)
 
+            # mock isdir
+            isdir = os.path.isdir
+            export_path = "_skotree_{}".format(uuid.uuid4())
+            def isdir_wrap(path):
+                return False if path == export_path else isdir(path)
+
             logger.info("Running bots, please wait...")
 
             stdout = io.StringIO()
-            with mock.patch("os.makedirs"), mock.patch("sys.stdout", stdout), \
-                 mock.patch("os.path.isdir", return_value=False), \
-                 mock.patch("codecs.open", export_app_wrap):
+            with mock.patch("codecs.open", export_app_codecs_open_stringio), \
+                 mock.patch("os.makedirs"), \
+                 mock.patch("os.path.isdir", isdir_wrap), \
+                 mock.patch("sys.stdout"):
                     exit_code = run_pytests(
                         session_config_name=session_name,
                         num_participants=num_participants,
                         preserve_data=True,
-                        export_path="virtual_skotree",
-                        verbosity=-1)
+                        export_path=export_path,
+                        verbosity=0)
 
             if exit_code:
                 raise RuntimeError(stdout.getvalue())

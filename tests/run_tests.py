@@ -60,7 +60,7 @@ class SKoTreeTestCase(object):
 
     def test_session_config(self):
         self.otree.session_config("matching_pennies")
-        with self.assertRaises():
+        with self.assertRaises(Exception):
             self.otree.session_config("foo")
 
     def test_all_data(self):
@@ -112,7 +112,7 @@ class SKoTreeTestCase(object):
     def test_csv_store(self):
         store = skotree.CSVStore({"foo": io.StringIO()})
         self.assertIn("foo", store)
-        self.assertEquals("<CSVStore({foo})>" == repr(store))
+        self.assertEquals("<CSVStore({foo})>", repr(store))
         self.assertTrue(store.foo.empty)
 
 
