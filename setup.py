@@ -57,6 +57,10 @@ REQUIREMENTS = [
     "pandas"]
 
 
+with open(os.path.join(os.path.dirname(__file__), 'README.rst')) as fp:
+    README = fp.read()
+
+
 # =============================================================================
 # FUNCTIONS
 # =============================================================================
@@ -66,6 +70,7 @@ def do_setup():
         name=skotree.NAME,
         version=skotree.VERSION,
         description=skotree.DOC.splitlines()[0],
+        long_description=README,
         author=skotree.AUTHORS,
         author_email=skotree.EMAIL,
         url=skotree.URL,
