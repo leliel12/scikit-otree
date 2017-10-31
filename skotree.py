@@ -79,7 +79,9 @@ from unittest import mock
 import urllib.parse as urlparse
 
 if os.getenv("SKOTREE_IN_SETUP") != "True":
-    from bs4 import BeautifulSoup
+    from pyquery import PyQuery as pq
+    from lxml import html
+    import requests
     import pandas as pd
 
 
@@ -414,12 +416,66 @@ class LocalMiddleware(Middleware):
 
 class RemoteMiddleware(Middleware):
 
-    def __init__(self, url, admin_password=None):
+    def __init__(self, url, **kwargs):
         self._url = url
-        self._cookies = {}
-        if admin_password is not None:
+        self._cookies = self.login(**kwargs)
+
+    def login(self, password=None):
+        if password is not None:
             # https://stackoverflow.com/questions/10134690/using-requests-python-library-to-connect-django-app-failed-on-authentication
             raise NotImplementedError("loggin not implemented")
+        return {}
+
+    def retrieve(self, *path):
+        url = "/".join((self._url,) + path)
+        response = requests.get(url, cookies=self._cookies)
+        response.raise_for_status()
+        return response
+
+    def lsapps(self):
+        if not hasattr(self, "_apps"):
+            self._apps = set()
+            resp = self.retrieve("export")
+            ds = pq(html.fromstring(resp.content))
+            for aelem in ds('a[href*="ExportAppDocs"]'):
+                href = aelem.attrib["href"]
+                app_name = href.rsplit("/", 2)[-2]
+                self._apps.add(app_name)
+        return list(self._apps)
+
+    def lssessions(self):
+        pass
+
+    def session_config(self, session_name):
+        pass
+
+    def all_data(self):
+        pass
+
+    def time_spent(self):
+        pass
+
+    def app_data(self, app_name):
+        pass
+
+    def app_doc(self, app_name):
+        pass
+
+    def bot_data(self, session_name, num_participants=None):
+        pass
+
+    @property
+    def path(self):
+        pass
+
+    @property
+    def settings(self):
+        return None
+
+    @property
+    def cookies(self):
+        return self._cookies
+
 
 
 
@@ -429,7 +485,7 @@ class RemoteMiddleware(Middleware):
 # =============================================================================
 
 MIDDLEWARES = {
-    "local": LocalMiddleware
+    "local": LocalMiddleware,
     "remote": RemoteMiddleware}
 
 
