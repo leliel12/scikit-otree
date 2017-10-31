@@ -434,35 +434,62 @@ class RemoteMiddleware(Middleware):
 
     def lsapps(self):
         if not hasattr(self, "_apps"):
-            self._apps = set()
+            apps = set()
             resp = self.retrieve("export")
             ds = pq(html.fromstring(resp.content))
-            for aelem in ds('a[href*="ExportAppDocs"]'):
-                href = aelem.attrib["href"]
+            for anchor in ds('a[href*="ExportAppDocs"]'):
+                href = anchor.attrib["href"]
                 app_name = href.rsplit("/", 2)[-2]
-                self._apps.add(app_name)
+                apps.add(app_name)
+            if apps:
+                self._apps = tuple(apps)
+            else:
+                warnings.warn("No apps found. The remote oTree must has at "
+                              "least one session to retrieve the apps")
+                return None
         return list(self._apps)
 
     def lssessions(self):
-        pass
+        if not hasattr(self, "_sessions"):
+            sessions = set()
+            resp = self.retrieve("create_session")
+            ds = pq(html.fromstring(resp.content))
+            for select in ds("select#id_session_config option[value!='']"):
+                ssn_name = select.attrib["value"]
+                sessions.add(ssn_name)
+            self._sessions = tuple(sessions)
+        return list(self._sessions)
 
     def session_config(self, session_name):
-        pass
+        return None
 
     def all_data(self):
-        pass
+        resp = self.retrieve("ExportWide")
+        fp = io.BytesIO(resp.content)
+        try:
+            return pd.read_csv(fp)
+        except pd.errors.EmptyDataError:
+            return pd.DataFrame()
 
     def time_spent(self):
-        pass
+        resp = self.retrieve("ExportTimeSpent")
+        fp = io.BytesIO(resp.content)
+        try:
+            return pd.read_csv(fp)
+        except pd.errors.EmptyDataError:
+            return pd.DataFrame()
 
     def app_data(self, app_name):
-        pass
+        apps = self.lsapps()
+        if apps is not None and app_name not in apps:
+            raise ValueError("Invalid app {}".format(app_name))
+        import ipdb; ipdb.set_trace()
 
     def app_doc(self, app_name):
         pass
 
     def bot_data(self, session_name, num_participants=None):
-        pass
+        raise NotImplementedError("Remote oTree can't run bots")
 
     @property
     def path(self):

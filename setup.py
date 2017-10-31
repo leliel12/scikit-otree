@@ -54,7 +54,8 @@ import skotree
 
 REQUIREMENTS = [
     "otree-core>=1.4.18",
-    "bs4",
+    "pyquery",
+    "lxml",
     "pandas"]
 
 
