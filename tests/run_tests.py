@@ -6,6 +6,9 @@ import inspect
 import io
 import unittest
 import atexit
+import urllib.parse as urlparse
+
+import requests
 
 import sh
 
@@ -35,12 +38,11 @@ class SKoTreeTestCase(object):
 
     def setUp(self):
         if self.is_remote and self.proc is None:
-            self.proc = sh.otree.runserver("localhost:6859", _bg=True)
+            netloc = urlparse.urlparse(self.path).netloc
+            self.proc = sh.otree.runserver(netloc, _bg=True)
             def kill_proc():
                 self.proc.process.terminate()
             atexit.register(kill_proc)
-            import ipdb; ipdb.set_trace()
-            import ipdb; ipdb.set_trace()
         self.otree = skotree.oTree(self.path)
 
     def tearDown(self):
