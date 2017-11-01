@@ -59,7 +59,7 @@ URL = "https://github.com/leliel12/scikit-otree"
 
 LICENSE = "MIT License"
 
-KEYWORDS = "mcda mcdm ahp moora muti criteria".split()
+KEYWORDS = "social-science experiments scipy".split()
 
 
 # =============================================================================

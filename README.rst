@@ -5,10 +5,10 @@ Scikit oTree
 .. image:: https://travis-ci.org/leliel12/scikit-otree.svg?branch=master
     :target: https://travis-ci.org/leliel12/scikit-otree
     :alt: Build-Status
-    
+
 .. image:: https://badge.fury.io/py/scikit-otree.svg
     :target: https://badge.fury.io/py/scikit-otree
-    
+
 .. image:: https://img.shields.io/badge/License-MIT-blue.svg
    :target: https://opensource.org/licenses/MIT
    :alt: License
@@ -41,7 +41,8 @@ Typical setup
 Support
 -------
 
--   **Full Documentation and Tutorial:** `tutorial.ipynb <tutorial.ipynb>`_
+-   **Full Documentation and Tutorial:**
+    `tutorial.ipynb <https://github.com/leliel12/scikit-otree/blob/master/tutorial.ipynb>`_
 -   **Contact:** jbc.develop@gmail.com
 -   **Issues:** If you have issues please report them as a issue
     here: https://github.com/leliel12/scikit-otree/issues
