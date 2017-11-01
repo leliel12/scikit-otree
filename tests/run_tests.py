@@ -8,8 +8,6 @@ import unittest
 import atexit
 import urllib.parse as urlparse
 
-import requests
-
 import sh
 
 import numpy as np
@@ -40,8 +38,10 @@ class SKoTreeTestCase(object):
         if self.is_remote and self.proc is None:
             netloc = urlparse.urlparse(self.path).netloc
             self.proc = sh.otree.runserver(netloc, _bg=True)
+
             def kill_proc():
                 self.proc.process.terminate()
+
             atexit.register(kill_proc)
         self.otree = skotree.oTree(self.path)
 
