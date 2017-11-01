@@ -17,6 +17,10 @@ Scikit oTree
    :target: https://badge.fury.io/py/scikit-otree
    :alt: Python 3.5
 
+.. image:: https://img.shields.io/badge/python-3.6-blue.svg
+   :target: https://badge.fury.io/py/scikit-otree
+   :alt: Python 3.6
+
 
 `oTree <http://www.otree.org/>`_ integration to the scientific Python Stack
 
