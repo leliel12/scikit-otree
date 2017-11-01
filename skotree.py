@@ -71,7 +71,6 @@ import contextlib
 import io
 import logging
 import pickle
-import os
 import uuid
 import multiprocessing as mp
 import urllib.parse as urlparse
@@ -220,10 +219,10 @@ class oTreeContextProcess(mp.Process):
         try:
             with cd(self._path), mock.patch("sys.argv", ["", "check"]):
                 with mock.patch("sys.stdout"), \
-                     mock.patch("warnings.warn"), \
-                     mock.patch("otree.management.cli.pypi_updates_cli"):
-                        from otree.management import cli
-                        cli.otree_cli()
+                        mock.patch("warnings.warn"), \
+                        mock.patch("otree.management.cli.pypi_updates_cli"):
+                            from otree.management import cli
+                            cli.otree_cli()
                 result = self._func()
         except Exception as err:
             result = err
@@ -384,15 +383,15 @@ class LocalMiddleware(Middleware):
 
             stdout = io.StringIO()
             with mock.patch("codecs.open", export_app_codecs_open_stringio), \
-                 mock.patch("os.makedirs"), \
-                 mock.patch("os.path.isdir", isdir_wrap), \
-                 mock.patch("sys.stdout"):
-                    exit_code = run_pytests(
-                        session_config_name=session_name,
-                        num_participants=num_participants,
-                        preserve_data=True,
-                        export_path=export_path,
-                        verbosity=0)
+                    mock.patch("os.makedirs"), \
+                    mock.patch("os.path.isdir", isdir_wrap), \
+                    mock.patch("sys.stdout"):
+                        exit_code = run_pytests(
+                            session_config_name=session_name,
+                            num_participants=num_participants,
+                            preserve_data=True,
+                            export_path=export_path,
+                            verbosity=0)
 
             if exit_code:
                 raise RuntimeError(stdout.getvalue())
@@ -514,9 +513,6 @@ class RemoteMiddleware(Middleware):
     @property
     def cookies(self):
         return self._cookies
-
-
-
 
 
 # =============================================================================

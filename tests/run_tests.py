@@ -5,6 +5,7 @@ import argparse
 import inspect
 import io
 import unittest
+import atexit
 
 import sh
 
@@ -22,6 +23,7 @@ class SKoTreeTestCase(object):
         self.has_session = has_session
         self.methods = []
         self.is_remote = skotree.is_url(path)
+        self.proc = None
         self.check = unittest.TestCase('__init__')
         for mname in dir(self):
             method = getattr(self, mname)
@@ -32,8 +34,11 @@ class SKoTreeTestCase(object):
         return getattr(self.check, n)
 
     def setUp(self):
-        #~ if self.is_remote:
-            #~ self.proc = sh.otree.runserver("localhost:6859", _bg=True)
+        if self.is_remote and self.proc is None:
+            self.proc = sh.otree.runserver("localhost:6859", _bg=True)
+            def kill_proc():
+                self.proc.process.terminate()
+            atexit.register(kill_proc)
         self.otree = skotree.oTree(self.path)
 
     def tearDown(self):
