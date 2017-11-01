@@ -39,6 +39,8 @@ class SKoTreeTestCase(object):
             def kill_proc():
                 self.proc.process.terminate()
             atexit.register(kill_proc)
+            import ipdb; ipdb.set_trace()
+            import ipdb; ipdb.set_trace()
         self.otree = skotree.oTree(self.path)
 
     def tearDown(self):
