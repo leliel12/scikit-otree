@@ -41,7 +41,7 @@ Based on:
 
 import os
 
-__version__ = ("0", "3", "5")
+__version__ = ("0", "4")
 
 __all__ = ["oTree"]
 
@@ -504,7 +504,7 @@ class RemoteMiddleware(Middleware):
 
     @property
     def path(self):
-        pass
+        return self._url
 
     @property
     def settings(self):

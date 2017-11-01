@@ -6,9 +6,12 @@ import inspect
 import io
 import unittest
 import atexit
+import time
 import urllib.parse as urlparse
 
 import sh
+
+import requests
 
 import numpy as np
 
@@ -43,6 +46,15 @@ class SKoTreeTestCase(object):
                 self.proc.process.terminate()
 
             atexit.register(kill_proc)
+
+            while True:
+                try:
+                    requests.get(self.path)
+                except requests.ConnectionError:
+                    time.sleep(2)
+                else:
+                    break
+
         self.otree = skotree.oTree(self.path)
 
     def tearDown(self):
