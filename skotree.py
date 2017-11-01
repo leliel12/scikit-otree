@@ -74,9 +74,11 @@ import pickle
 import os
 import uuid
 import multiprocessing as mp
+import urllib.parse as urlparse
+import warnings
 from collections import Mapping
 from unittest import mock
-import urllib.parse as urlparse
+
 
 if os.getenv("SKOTREE_IN_SETUP") != "True":
     from pyquery import PyQuery as pq
@@ -461,7 +463,8 @@ class RemoteMiddleware(Middleware):
         return list(self._sessions)
 
     def session_config(self, session_name):
-        return None
+        raise NotImplementedError(
+            "Remote oTree can't retrieve session configs")
 
     def all_data(self):
         resp = self.retrieve("ExportWide")
@@ -483,10 +486,19 @@ class RemoteMiddleware(Middleware):
         apps = self.lsapps()
         if apps is not None and app_name not in apps:
             raise ValueError("Invalid app {}".format(app_name))
-        import ipdb; ipdb.set_trace()
+        resp = self.retrieve("ExportApp", app_name)
+        fp = io.BytesIO(resp.content)
+        try:
+            return pd.read_csv(fp)
+        except pd.errors.EmptyDataError:
+            return pd.DataFrame()
 
     def app_doc(self, app_name):
-        pass
+        apps = self.lsapps()
+        if apps is not None and app_name not in apps:
+            raise ValueError("Invalid app {}".format(app_name))
+        resp = self.retrieve("ExportAppDocs", app_name)
+        return resp.text
 
     def bot_data(self, session_name, num_participants=None):
         raise NotImplementedError("Remote oTree can't run bots")
