@@ -54,8 +54,10 @@ class SKoTreeTestCase(object):
                     time.sleep(2)
                 else:
                     break
-
-        self.otree = skotree.oTree(self.path)
+            self.otree = skotree.oTree(
+                self.path, username="admin", password="skotree")
+        else:
+            self.otree = skotree.oTree(self.path)
 
     def tearDown(self):
         del self.otree

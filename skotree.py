@@ -419,24 +419,36 @@ class RemoteMiddleware(Middleware):
 
     def __init__(self, url, **kwargs):
         self._url = url
-        self._cookies = self.login(**kwargs)
+        self._client = requests.session()
+        self.login(**kwargs)
 
-    def login(self, password=None):
-        if password is not None:
-            # https://stackoverflow.com/questions/10134690/using-requests-python-library-to-connect-django-app-failed-on-authentication
-            raise NotImplementedError("loggin not implemented")
-        return {}
+    def absurl(self, subpath):
+        return "/".join((self._url, subpath))
 
-    def retrieve(self, *path):
-        url = "/".join((self._url,) + path)
-        response = requests.get(url, cookies=self._cookies)
-        response.raise_for_status()
-        return response
+    def login(self, username=None, password=None):
+        if any((username, password)):
+            full_url = self.absurl("accounts/login")
+
+            # this is for retrieve the csrftoken
+            resp = self.client.get(full_url)
+            resp.raise_for_status()
+
+            cookies = self.client.cookies
+            csrftoken = cookies.get('csrftoken') or cookies['csrf']
+
+            # login
+            data = {"username": username, "password": password,
+                    "csrfmiddlewaretoken": csrftoken}
+            resp = self.client.post(full_url, data=data)
+            resp.raise_for_status()
 
     def lsapps(self):
         if not hasattr(self, "_apps"):
             apps = set()
-            resp = self.retrieve("export")
+
+            resp = self._client.get(self.absurl("export"))
+            resp.raise_for_status()
+
             ds = pq(html.fromstring(resp.content))
             for anchor in ds('a[href*="ExportAppDocs"]'):
                 href = anchor.attrib["href"]
@@ -453,7 +465,10 @@ class RemoteMiddleware(Middleware):
     def lssessions(self):
         if not hasattr(self, "_sessions"):
             sessions = set()
-            resp = self.retrieve("create_session")
+
+            resp = self._client.get(self.absurl("create_session"))
+            resp.raise_for_status()
+
             ds = pq(html.fromstring(resp.content))
             for select in ds("select#id_session_config option[value!='']"):
                 ssn_name = select.attrib["value"]
@@ -466,7 +481,9 @@ class RemoteMiddleware(Middleware):
             "Remote oTree can't retrieve session configs")
 
     def all_data(self):
-        resp = self.retrieve("ExportWide")
+        resp = self._client.get(self.absurl("ExportWide"))
+        resp.raise_for_status()
+
         fp = io.BytesIO(resp.content)
         try:
             return pd.read_csv(fp)
@@ -474,7 +491,9 @@ class RemoteMiddleware(Middleware):
             return pd.DataFrame()
 
     def time_spent(self):
-        resp = self.retrieve("ExportTimeSpent")
+        resp = self._client.get(self.absurl("ExportTimeSpent"))
+        resp.raise_for_status()
+
         fp = io.BytesIO(resp.content)
         try:
             return pd.read_csv(fp)
@@ -485,7 +504,10 @@ class RemoteMiddleware(Middleware):
         apps = self.lsapps()
         if apps is not None and app_name not in apps:
             raise ValueError("Invalid app {}".format(app_name))
-        resp = self.retrieve("ExportApp", app_name)
+
+        resp = self._client.get(self.absurl("ExportApp/{}".format(app_name)))
+        resp.raise_for_status()
+
         fp = io.BytesIO(resp.content)
         try:
             return pd.read_csv(fp)
@@ -496,7 +518,11 @@ class RemoteMiddleware(Middleware):
         apps = self.lsapps()
         if apps is not None and app_name not in apps:
             raise ValueError("Invalid app {}".format(app_name))
-        resp = self.retrieve("ExportAppDocs", app_name)
+
+        resp = self._client.get(
+            self.absurl("ExportAppDocs/{}".format(app_name)))
+        resp.raise_for_status()
+
         return resp.text
 
     def bot_data(self, session_name, num_participants=None):
@@ -511,8 +537,8 @@ class RemoteMiddleware(Middleware):
         return None
 
     @property
-    def cookies(self):
-        return self._cookies
+    def client(self):
+        return self._client
 
 
 # =============================================================================
