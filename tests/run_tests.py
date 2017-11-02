@@ -54,6 +54,8 @@ class SKoTreeTestCase(object):
                     time.sleep(2)
                 else:
                     break
+
+        if self.is_remote:
             self.otree = skotree.oTree(
                 self.path, username="admin", password="skotree")
         else:

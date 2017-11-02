@@ -41,7 +41,7 @@ Based on:
 
 import os
 
-__version__ = ("0", "4", "1")
+__version__ = ("0", "5")
 
 __all__ = ["oTree"]
 
@@ -415,32 +415,49 @@ class LocalMiddleware(Middleware):
 # REMOTE OTREE
 # =============================================================================
 
+class NoLoggedin(Exception):
+    pass
+
+
 class RemoteMiddleware(Middleware):
 
     def __init__(self, url, **kwargs):
         self._url = url
         self._client = requests.session()
         self.login(**kwargs)
+        self.check_loggedin()
 
     def absurl(self, subpath):
         return "/".join((self._url, subpath))
 
     def login(self, username=None, password=None):
-        if any((username, password)):
-            full_url = self.absurl("accounts/login")
+        if (username, password) == (None, None):
+            return
+        if not all((username, password)):
+            raise TypeError("The params 'username' and 'pasword' "
+                            "must be provided together")
 
-            # this is for retrieve the csrftoken
-            resp = self.client.get(full_url)
-            resp.raise_for_status()
+        full_url = self.absurl("accounts/login")
 
-            cookies = self.client.cookies
-            csrftoken = cookies.get('csrftoken') or cookies['csrf']
+        # this is for retrieve the csrftoken
+        resp = self.client.get(full_url)
+        resp.raise_for_status()
 
-            # login
-            data = {"username": username, "password": password,
-                    "csrfmiddlewaretoken": csrftoken}
-            resp = self.client.post(full_url, data=data)
-            resp.raise_for_status()
+        cookies = self.client.cookies
+        csrftoken = cookies.get('csrftoken') or cookies['csrf']
+
+        # login
+        data = {"username": username, "password": password,
+                "csrfmiddlewaretoken": csrftoken}
+        resp = self.client.post(full_url, data=data)
+        resp.raise_for_status()
+
+    def check_loggedin(self):
+        resp = self._client.get(self.absurl("export"))
+        resp.raise_for_status()
+        if "/accounts/login/?next=" in resp.url:
+            msg = "You are not authenticated in experiment located at {}"
+            raise NoLoggedin(msg.format(self._url))
 
     def lsapps(self):
         if not hasattr(self, "_apps"):
