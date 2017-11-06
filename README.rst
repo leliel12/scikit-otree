@@ -46,8 +46,9 @@ Support
 -------
 
 -   **Full Documentation and Tutorial:**
-    `tutorial.ipynb <https://github.com/leliel12/scikit-otree/blob/master/tutorial.ipynb>`_
--   **Contact:** jbc.develop@gmail.com
+    `tutorial.ipynb <https://nbviewer.jupyter.org/github/leliel12/scikit-otree/blob/master/tutorial.ipynb#>`_
+-   **oTree Google Group:** https://groups.google.com/forum/#!forum/otree
+-   **Contact:** jbc.develop@gmail.com (if you have a support question, try the mailing list first)
 -   **Issues:** If you have issues please report them as a issue
     here: https://github.com/leliel12/scikit-otree/issues
 
